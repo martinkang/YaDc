@@ -76,11 +76,25 @@ DIVISION_CUTOFF_LOOKUP: Dict[str, Tuple[int, int]] = {
 
 DIVISION_DESIGN_ID_TO_CHAR: Dict[str, str] = dict([(value, key) for key, value in DIVISION_CHAR_TO_DESIGN_ID.items()])
 
+DIVISION_MAX_FLEET_COUNT_TARGETS_TOP: Dict[str, int] = {
+    '1': 8,
+    '2': 12,
+    '3': 15,
+    '4': 15,
+}
+
 DIVISION_MAX_COUNT_TARGETS_TOP: Dict[str, int] = {
+    '1': 100,
+    '2': 100,
+    '3': 100,
+    '4': 100,
+}
+
+DIVISION_DEFAULT_COUNT_TARGETS_TOP: Dict[str, int] = {
     '1': 20,
-    '2': 14,
-    '3': 5,
-    '4': 3,
+    '2': 15,
+    '3': 10,
+    '4': 10,
 }
 
 

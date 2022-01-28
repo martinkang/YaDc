@@ -311,6 +311,14 @@ def __get_trophies(user_info: EntityInfo, **kwargs) -> Optional[str]:
             result += f' (highest: {highest_trophies})'
     return result
 
+def __get_immunity(user_info: EntityInfo, ship_info: EntityInfo = None, retrieved_at: datetime = None, **kwargs) -> Optional[str]:
+    result = None
+    ImmunityDate = utils.parse.pss_datetime( ship_info.get('ImmunityDate') )
+
+    return __format_past_timestamp(ImmunityDate, retrieved_at)
+
+
+
 
 def __get_user_type(user_info: EntityInfo, **kwargs) -> Optional[str]:
     result = None
@@ -444,6 +452,8 @@ __properties: entity.EntityDetailsCreationPropertiesCollection = {
         [
         entity.EntityDetailProperty('Account created', True, entity_property_name='CreationDate', transform_function=__get_timestamp),
         entity.EntityDetailProperty('Last Login', True, entity_property_name='LastLoginDate', transform_function=__get_timestamp),
+        entity.EntityDetailProperty('Last HeartBeat', True, entity_property_name='LastHeartBeatDate', transform_function=__get_timestamp),
+        entity.EntityDetailProperty('Immunity Date', True, transform_function=__get_immunity),
         entity.EntityDetailProperty('Fleet', True, transform_function=__get_fleet_name_and_rank),
         entity.EntityDetailProperty('Division', True, transform_function=__get_division_name),
         entity.EntityDetailProperty('Joined fleet', True, entity_property_name='AllianceJoinDate', transform_function=__get_fleet_joined_at),

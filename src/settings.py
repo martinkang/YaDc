@@ -14,7 +14,13 @@ BASE_INVITE_URL: str = 'https://discordapp.com/oauth2/authorize?scope=bot&permis
 
 
 DATABASE_SSL_MODE: str = os.environ.get('DATABASE_SSL_MODE', 'require')
-DATABASE_URL: str = f'{os.environ.get("DATABASE_URL")}?sslmode={DATABASE_SSL_MODE}'
+DATABASE_URI_BASE: str = 'postgres'
+DATABASE_IP: str = os.environ.get('DATABASE_IP')
+DATABASE_PORT: str = os.environ.get('DATABASE_PORT')
+DATABASE_USER: str = os.environ.get('DATABASE_USER')
+DATABASE_PW: str = os.environ.get('DATABASE_PW')
+DATABSAE_NAME: str = 'postgres'
+DATABASE_URL: str = f'{DATABASE_URI_BASE}://{DATABASE_USER}:{DATABASE_PW}@{DATABASE_IP}/{DATABSAE_NAME}?sslmode={DATABASE_SSL_MODE}'
 
 DEFAULT_HYPHEN: str = '–'
 DEFAULT_PREFIX: str = '/'

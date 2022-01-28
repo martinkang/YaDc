@@ -12,13 +12,17 @@ import pss_core as core
 import settings
 import utils
 
+import uuid
+import hashlib
+import requests
+from xml.etree import ElementTree as ET
 
 # ---------- Constants & Internals ----------
 
 ACCESS_TOKEN_TIMEOUT: timedelta = timedelta(minutes=3)
 
 DEVICE_LOGIN_PATH: str = 'UserService/DeviceLogin11'
-
+DEVICE_LOGIN_PATH8: str = 'UserService/DeviceLogin8'
 DEFAULT_DEVICE_TYPE: str = 'DeviceTypeMac'
 DEVICES: 'DeviceCollection' = None
 
@@ -115,30 +119,25 @@ class Device():
 
     async def __login(self) -> None:
         base_url = await core.get_base_url()
-        url = f'{base_url}{DEVICE_LOGIN_PATH}'
+        url = f'{base_url}{DEVICE_LOGIN_PATH8}'
         utc_now = utils.get_utc_now()
-        client_datetime = utils.format.pss_datetime(utc_now)
-        query_params = {
-            'advertisingKey': '""',
-            'checksum': _create_device_checksum(self.__key, self.__device_type, client_datetime),
-            'clientDateTime': client_datetime,
-            'deviceKey': self.__key,
-            'deviceType': self.__device_type,
-            'isJailBroken': 'false',
-            'languageKey': 'en',
+        
+        device_key: str = uuid.uuid1().hex[0:16]
+        device_type: str = 'DeviceTypeMac'
+        checksum = hashlib.md5((f'{device_key}{device_type}savysoda').encode('utf-8')).hexdigest()
+        params = {
+            'advertisingKey': '""', 'checksum': checksum,
+            'deviceKey': device_key, 'deviceType': device_type,
+            'isJailBroken': 'false', 'languageKey': 'en'
         }
+        
         if settings.PRINT_DEBUG_WEB_REQUESTS:
             print(f'[WebRequest] Attempting to get data from url: {url}')
-            print(f'[WebRequest]   with parameters: {json.dumps(query_params, separators=(",", ":"))}')
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, params=query_params) as response:
-                data = await response.text(encoding='utf-8')
-                if settings.PRINT_DEBUG_WEB_REQUESTS:
-                    log_data = data or ''
-                    if log_data and len(log_data) > 100:
-                        log_data = log_data[:100]
-                    print(f'[WebRequest] Returned data: {log_data}')
-
+            print(f'[WebRequest]   with parameters: {json.dumps(params, separators=(",", ":"))}')
+        
+        data = requests.post(url, params=params).content.decode('utf-8')
+        dataxml = ET.fromstring(data)
+       
         result = utils.convert.raw_xml_to_dict(data)
         self.__last_login = utc_now
         if 'UserService' in result.keys():
@@ -352,13 +351,31 @@ async def _db_get_device(device_key: str) -> Optional[Device]:
     return result
 
 
+async def _db_create_device():
+    print("_db_create_device")
+    device_key: str = uuid.uuid1().hex[0:16]
+    device_type: str = 'DeviceTypeMac'
+    checksum = hashlib.md5((f'{device_key}{device_type}savysoda').encode('utf-8')).hexdigest()
+    print(device_key)
+    print(device_type)
+    print(checksum)
+   
+    device = Device(device_key)
+    device.__device_type = device_type
+    device.__checksum = checksum
+    device.checksum = checksum
+
+    await _db_try_store_device(device)
+    return device
+
 async def _db_get_devices() -> List[Device]:
     query = f'SELECT key FROM devices;'
     rows = await db.fetchall(query)
     if rows:
         result = [Device(*row) for row in rows]
     else:
-        result = []
+        device = await _db_create_device()
+        result = [Device(device)]
     return result
 
 
