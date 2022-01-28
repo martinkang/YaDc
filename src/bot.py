@@ -420,175 +420,175 @@ async def daily_fetch_latest_message(text_channel: TextChannel, latest_message_i
 # ----------                  General Bot Commands                  ---------- #
 # ############################################################################ #
 
-@BOT.command(name='about', aliases=['info'], brief='Display info on this bot')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_about(ctx: Context):
-    """
-    Displays information about this bot and its authors.
+# @BOT.command(name='about', aliases=['info'], brief='Display info on this bot')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_about(ctx: Context):
+#     """
+#     Displays information about this bot and its authors.
 
-    Usage:
-      /about
-      /info
+#     Usage:
+#       /about
+#       /info
 
-    Examples:
-      /about - Displays information on this bot and its authors.
-    """
-    __log_command_use(ctx)
-    guild_count = len([guild for guild in BOT.guilds if guild.id not in settings.IGNORE_SERVER_IDS_FOR_COUNTING])
-    user_name = BOT.user.display_name
-    if ctx.guild is None:
-        nick = BOT.user.display_name
-    else:
-        nick = ctx.guild.me.display_name
-    has_nick = BOT.user.display_name != nick
-    pfp_url = BOT.user.avatar_url
-    about_info = core.read_about_file()
+#     Examples:
+#       /about - Displays information on this bot and its authors.
+#     """
+#     __log_command_use(ctx)
+#     guild_count = len([guild for guild in BOT.guilds if guild.id not in settings.IGNORE_SERVER_IDS_FOR_COUNTING])
+#     user_name = BOT.user.display_name
+#     if ctx.guild is None:
+#         nick = BOT.user.display_name
+#     else:
+#         nick = ctx.guild.me.display_name
+#     has_nick = BOT.user.display_name != nick
+#     pfp_url = BOT.user.avatar_url
+#     about_info = core.read_about_file()
 
-    title = f'About {nick}'
-    if has_nick:
-        title += f' ({user_name})'
-    description = about_info['description']
-    footer = f'Serving on {guild_count} guild{"" if guild_count == 1 else "s"}.'
-    fields = [
-        ('version', f'v{settings.VERSION}', True),
-        ('authors', ', '.join(about_info['authors']), True),
-        ('profile pic by', about_info['pfp'], True),
-        ('support', about_info['support'], False)
-    ]
-    colour = utils.discord.get_bot_member_colour(BOT, ctx.guild)
+#     title = f'About {nick}'
+#     if has_nick:
+#         title += f' ({user_name})'
+#     description = about_info['description']
+#     footer = f'Serving on {guild_count} guild{"" if guild_count == 1 else "s"}.'
+#     fields = [
+#         ('version', f'v{settings.VERSION}', True),
+#         ('authors', ', '.join(about_info['authors']), True),
+#         ('profile pic by', about_info['pfp'], True),
+#         ('support', about_info['support'], False)
+#     ]
+#     colour = utils.discord.get_bot_member_colour(BOT, ctx.guild)
 
-    embed = utils.discord.create_embed(title, description=description, colour=colour, fields=fields, thumbnail_url=pfp_url, footer=footer)
-    await utils.discord.reply_with_output(ctx, [embed])
-
-
-@BOT.command(name='invite', brief='Get an invite link')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_invite(ctx: Context):
-    """
-    Produces an invite link for this bot and sends it via DM.
-
-    Usage:
-      /invite
-
-    Examples:
-      /invite - Produces an invite link for this bot and sends it via DM.
-    """
-    __log_command_use(ctx)
-
-    as_embed = await server_settings.get_use_embeds(ctx)
-
-    if ctx.guild is None:
-        nick = BOT.user.display_name
-    else:
-        nick = ctx.guild.me.display_name
-    title = f'Invite {nick} to your server'
-    invite_url = f'{settings.BASE_INVITE_URL}{BOT.user.id}'
-    colour = None
-
-    if as_embed:
-        colour = utils.discord.get_bot_member_colour(ctx.bot, ctx.guild)
-        description = f'[{title}]({invite_url})'
-        output = utils.discord.create_embed(None, description=description, colour=colour)
-    else:
-        output = f'{title}: {invite_url}'
-    await utils.discord.dm_author(ctx, [output], output_is_embeds=as_embed)
-    if utils.discord.is_guild_channel(ctx.channel):
-        notice = f'{ctx.author.mention} Sent invite link via DM.'
-        if as_embed:
-            notice = utils.discord.create_embed(None, description=notice, colour=colour)
-        await utils.discord.reply_with_output(ctx, [notice])
+#     embed = utils.discord.create_embed(title, description=description, colour=colour, fields=fields, thumbnail_url=pfp_url, footer=footer)
+#     await utils.discord.reply_with_output(ctx, [embed])
 
 
-@BOT.command(name='links', brief='Show links')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_links(ctx: Context):
-    """
-    Shows the links for useful sites regarding Pixel Starships.
+# @BOT.command(name='invite', brief='Get an invite link')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_invite(ctx: Context):
+#     """
+#     Produces an invite link for this bot and sends it via DM.
 
-    Usage:
-      /links
+#     Usage:
+#       /invite
 
-    Examples:
-      /links - Shows the links for useful sites regarding Pixel Starships.
-    """
-    __log_command_use(ctx)
-    links = core.read_links_file()
-    output = []
-    if (await server_settings.get_use_embeds(ctx)):
-        title = 'Pixel Starships weblinks'
-        colour = utils.discord.get_bot_member_colour(BOT, ctx.guild)
-        fields = []
-        for field_name, hyperlinks in links.items():
-            field_value = []
-            for (description, hyperlink) in hyperlinks:
-                field_value.append(f'[{description}]({hyperlink})')
-            fields.append((field_name, '\n'.join(field_value), False))
-        embed = utils.discord.create_embed(title, fields=fields, colour=colour)
-        output.append(embed)
-    else:
-        for category, hyperlinks in links.items():
-            output.append(f'**{category}**')
-            for (description, hyperlink) in hyperlinks:
-                output.append(f'{description}: <{hyperlink}>')
-            output.append(utils.discord.ZERO_WIDTH_SPACE)
-        if output:
-            output = output[:-1]
-    await utils.discord.reply_with_output(ctx, output)
+#     Examples:
+#       /invite - Produces an invite link for this bot and sends it via DM.
+#     """
+#     __log_command_use(ctx)
 
+#     as_embed = await server_settings.get_use_embeds(ctx)
 
-@BOT.command(name='ping', brief='Ping the server')
-async def cmd_ping(ctx: Context):
-    """
-    Ping the bot to verify that it\'s listening for commands.
+#     if ctx.guild is None:
+#         nick = BOT.user.display_name
+#     else:
+#         nick = ctx.guild.me.display_name
+#     title = f'Invite {nick} to your server'
+#     invite_url = f'{settings.BASE_INVITE_URL}{BOT.user.id}'
+#     colour = None
 
-    Usage:
-      /ping
-
-    Examples:
-      /ping - The bot will answer with 'Pong!'.
-    """
-    __log_command_use(ctx)
-    msg = await ctx.send('Pong!')
-    miliseconds = (msg.created_at - ctx.message.created_at).microseconds / 1000.0
-    await msg.edit(content=f'{msg.content} ({miliseconds} ms)')
+#     if as_embed:
+#         colour = utils.discord.get_bot_member_colour(ctx.bot, ctx.guild)
+#         description = f'[{title}]({invite_url})'
+#         output = utils.discord.create_embed(None, description=description, colour=colour)
+#     else:
+#         output = f'{title}: {invite_url}'
+#     await utils.discord.dm_author(ctx, [output], output_is_embeds=as_embed)
+#     if utils.discord.is_guild_channel(ctx.channel):
+#         notice = f'{ctx.author.mention} Sent invite link via DM.'
+#         if as_embed:
+#             notice = utils.discord.create_embed(None, description=notice, colour=colour)
+#         await utils.discord.reply_with_output(ctx, [notice])
 
 
-@BOT.command(name='support', brief='Invite to bot\'s support server')
-async def cmd_support(ctx: Context):
-    """
-    Produces an invite link to the support server for this bot and sends it via DM.
+# @BOT.command(name='links', brief='Show links')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_links(ctx: Context):
+#     """
+#     Shows the links for useful sites regarding Pixel Starships.
 
-    Usage:
-      /support
+#     Usage:
+#       /links
 
-    Examples:
-      /support - Produces an invite link to the support server and sends it via DM.
-    """
-    __log_command_use(ctx)
+#     Examples:
+#       /links - Shows the links for useful sites regarding Pixel Starships.
+#     """
+#     __log_command_use(ctx)
+#     links = core.read_links_file()
+#     output = []
+#     if (await server_settings.get_use_embeds(ctx)):
+#         title = 'Pixel Starships weblinks'
+#         colour = utils.discord.get_bot_member_colour(BOT, ctx.guild)
+#         fields = []
+#         for field_name, hyperlinks in links.items():
+#             field_value = []
+#             for (description, hyperlink) in hyperlinks:
+#                 field_value.append(f'[{description}]({hyperlink})')
+#             fields.append((field_name, '\n'.join(field_value), False))
+#         embed = utils.discord.create_embed(title, fields=fields, colour=colour)
+#         output.append(embed)
+#     else:
+#         for category, hyperlinks in links.items():
+#             output.append(f'**{category}**')
+#             for (description, hyperlink) in hyperlinks:
+#                 output.append(f'{description}: <{hyperlink}>')
+#             output.append(utils.discord.ZERO_WIDTH_SPACE)
+#         if output:
+#             output = output[:-1]
+#     await utils.discord.reply_with_output(ctx, output)
 
-    as_embed = await server_settings.get_use_embeds(ctx)
 
-    if ctx.guild is None:
-        nick = BOT.user.display_name
-    else:
-        nick = ctx.guild.me.display_name
-    about = core.read_about_file()
-    title = f'Join {nick} support server'
-    colour = None
-    guild_invite = about['support']
+# @BOT.command(name='ping', brief='Ping the server')
+# async def cmd_ping(ctx: Context):
+#     """
+#     Ping the bot to verify that it\'s listening for commands.
 
-    if as_embed:
-        colour = utils.discord.get_bot_member_colour(ctx.bot, ctx.guild)
-        description = f'[{title}]({guild_invite})'
-        output = utils.discord.create_embed(None, description=description, colour=colour)
-    else:
-        output = f'{title}: {guild_invite}'
-    await utils.discord.dm_author(ctx, [output], output_is_embeds=as_embed)
-    if utils.discord.is_guild_channel(ctx.channel):
-        notice = f'{ctx.author.mention} Sent invite link to bot support server via DM.'
-        if as_embed:
-            notice = utils.discord.create_embed(None, description=notice, colour=colour)
-        await utils.discord.reply_with_output(ctx, [notice])
+#     Usage:
+#       /ping
+
+#     Examples:
+#       /ping - The bot will answer with 'Pong!'.
+#     """
+#     __log_command_use(ctx)
+#     msg = await ctx.send('Pong!')
+#     miliseconds = (msg.created_at - ctx.message.created_at).microseconds / 1000.0
+#     await msg.edit(content=f'{msg.content} ({miliseconds} ms)')
+
+
+# @BOT.command(name='support', brief='Invite to bot\'s support server')
+# async def cmd_support(ctx: Context):
+#     """
+#     Produces an invite link to the support server for this bot and sends it via DM.
+
+#     Usage:
+#       /support
+
+#     Examples:
+#       /support - Produces an invite link to the support server and sends it via DM.
+#     """
+#     __log_command_use(ctx)
+
+#     as_embed = await server_settings.get_use_embeds(ctx)
+
+#     if ctx.guild is None:
+#         nick = BOT.user.display_name
+#     else:
+#         nick = ctx.guild.me.display_name
+#     about = core.read_about_file()
+#     title = f'Join {nick} support server'
+#     colour = None
+#     guild_invite = about['support']
+
+#     if as_embed:
+#         colour = utils.discord.get_bot_member_colour(ctx.bot, ctx.guild)
+#         description = f'[{title}]({guild_invite})'
+#         output = utils.discord.create_embed(None, description=description, colour=colour)
+#     else:
+#         output = f'{title}: {guild_invite}'
+#     await utils.discord.dm_author(ctx, [output], output_is_embeds=as_embed)
+#     if utils.discord.is_guild_channel(ctx.channel):
+#         notice = f'{ctx.author.mention} Sent invite link to bot support server via DM.'
+#         if as_embed:
+#             notice = utils.discord.create_embed(None, description=notice, colour=colour)
+#         await utils.discord.reply_with_output(ctx, [notice])
 
 
 
@@ -1061,294 +1061,294 @@ async def cmd_support(ctx: Context):
 #     await utils.discord.reply_with_output(ctx, output)
 
 
-@BOT.group(name='past', aliases=['history'], brief='Get historic data', invoke_without_command=True)
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_past(ctx: Context, month: str = None, year: str = None):
-    """
-    Get historic tournament data.
+# @BOT.group(name='past', aliases=['history'], brief='Get historic data', invoke_without_command=True)
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_past(ctx: Context, month: str = None, year: str = None):
+#     """
+#     Get historic tournament data.
 
-    Parameters:
-      month: Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
-      year:  Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
+#     Parameters:
+#       month: Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
+#       year:  Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
 
-    If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
+#     If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
 
-    You need to use one of the subcommands.
-    """
-    __log_command_use(ctx)
-    await ctx.send_help('past')
-
-
-@cmd_past.group(name='stars', brief='Get historic division stars', invoke_without_command=True)
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_past_stars(ctx: Context, month: str = None, year: str = None, *, division: str = None):
-    """
-    Get historic tournament division stars data.
-
-    Parameters:
-      month:    Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
-      year:     Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
-      division: Optional. The division for which the data should be displayed. If not specified will print all divisions.
-
-    If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
-    """
-    __log_command_use(ctx)
-    utc_now = utils.get_utc_now()
-    output = []
-
-    (month, year, division) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
-    if year is not None and month is None:
-        raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
-
-    if not pss_top.is_valid_division_letter(division):
-        subcommand = BOT.get_command('past stars fleet')
-        await ctx.invoke(subcommand, month=month, year=year, fleet_name=division)
-        return
-    else:
-        month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
-        tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
-        if tourney_data:
-            output = await pss_top.get_division_stars(ctx, division=division, fleet_data=tourney_data.fleets, retrieved_date=tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
-    await utils.discord.reply_with_output(ctx, output)
+#     You need to use one of the subcommands.
+#     """
+#     __log_command_use(ctx)
+#     await ctx.send_help('past')
 
 
-@cmd_past_stars.command(name='fleet', aliases=['alliance'], brief='Get historic fleet stars')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_past_stars_fleet(ctx: Context, month: str = None, year: str = None, *, fleet_name: str = None):
-    """
-    Get historic tournament fleet stars data.
+# @cmd_past.group(name='stars', brief='Get historic division stars', invoke_without_command=True)
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_past_stars(ctx: Context, month: str = None, year: str = None, *, division: str = None):
+#     """
+#     Get historic tournament division stars data.
 
-    Parameters:
-      month:      Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
-      year:       Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
-      fleet_name: Mandatory. The fleet for which the data should be displayed.
+#     Parameters:
+#       month:    Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
+#       year:     Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
+#       division: Optional. The division for which the data should be displayed. If not specified will print all divisions.
 
-    If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
-    """
-    __log_command_use(ctx)
-    output = []
-    utc_now = utils.get_utc_now()
-    (month, year, fleet_name) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
-    if year is not None and month is None:
-        raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
-    if not fleet_name:
-        raise MissingParameterError('The parameter `fleet_name` is mandatory.')
+#     If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
+#     """
+#     __log_command_use(ctx)
+#     utc_now = utils.get_utc_now()
+#     output = []
 
-    month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
-    tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
+#     (month, year, division) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
+#     if year is not None and month is None:
+#         raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
 
-    if tourney_data is None:
-        fleet_infos = []
-    else:
-        fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, tourney_data.fleets)
-
-    if fleet_infos:
-        if len(fleet_infos) == 1:
-            fleet_info = fleet_infos[0]
-        else:
-            use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-            paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
-            _, fleet_info = await paginator.wait_for_option_selection()
-
-        if fleet_info:
-            output = await fleet.get_fleet_users_stars_from_tournament_data(ctx, fleet_info, tourney_data.fleets, tourney_data.users, tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
-    else:
-        leading_space_note = ''
-        if fleet_name.startswith(' '):
-            leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
-        raise NotFound(f'Could not find a fleet named `{fleet_name}` that participated in the {year} {calendar.month_name[int(month)]} tournament.{leading_space_note}')
-    await utils.discord.reply_with_output(ctx, output)
+#     if not pss_top.is_valid_division_letter(division):
+#         subcommand = BOT.get_command('past stars fleet')
+#         await ctx.invoke(subcommand, month=month, year=year, fleet_name=division)
+#         return
+#     else:
+#         month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
+#         tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
+#         if tourney_data:
+#             output = await pss_top.get_division_stars(ctx, division=division, fleet_data=tourney_data.fleets, retrieved_date=tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     await utils.discord.reply_with_output(ctx, output)
 
 
-@cmd_past.command(name='fleet', aliases=['alliance'], brief='Get historic fleet data')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_past_fleet(ctx: Context, month: str = None, year: str = None, *, fleet_name: str = None):
-    """
-    Get historic tournament fleet data.
+# @cmd_past_stars.command(name='fleet', aliases=['alliance'], brief='Get historic fleet stars')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_past_stars_fleet(ctx: Context, month: str = None, year: str = None, *, fleet_name: str = None):
+#     """
+#     Get historic tournament fleet stars data.
 
-    Parameters:
-      month:      Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
-      year:       Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
-      fleet_name: Mandatory. The fleet for which the data should be displayed.
+#     Parameters:
+#       month:      Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
+#       year:       Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
+#       fleet_name: Mandatory. The fleet for which the data should be displayed.
 
-    If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
-    """
-    __log_command_use(ctx)
-    error = None
-    utc_now = utils.get_utc_now()
-    (month, year, fleet_name) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
-    if year is not None and month is None:
-        raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
-    if not fleet_name:
-        raise MissingParameterError('The parameter `fleet_name` is mandatory.')
+#     If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
+#     """
+#     __log_command_use(ctx)
+#     output = []
+#     utc_now = utils.get_utc_now()
+#     (month, year, fleet_name) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
+#     if year is not None and month is None:
+#         raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
+#     if not fleet_name:
+#         raise MissingParameterError('The parameter `fleet_name` is mandatory.')
 
-    month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
-    tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
+#     month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
+#     tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
 
-    if tourney_data is None:
-        fleet_infos = []
-    else:
-        fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, tourney_data.fleets)
+#     if tourney_data is None:
+#         fleet_infos = []
+#     else:
+#         fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, tourney_data.fleets)
 
-    if fleet_infos:
-        if len(fleet_infos) == 1:
-            fleet_info = fleet_infos[0]
-        else:
-            use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-            paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
-            _, fleet_info = await paginator.wait_for_option_selection()
+#     if fleet_infos:
+#         if len(fleet_infos) == 1:
+#             fleet_info = fleet_infos[0]
+#         else:
+#             use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#             paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
+#             _, fleet_info = await paginator.wait_for_option_selection()
 
-        if fleet_info:
-            as_embed = await server_settings.get_use_embeds(ctx)
-            output, file_paths = await fleet.get_full_fleet_info_as_text(ctx, fleet_info, past_fleets_data=tourney_data.fleets, past_users_data=tourney_data.users, past_retrieved_at=tourney_data.retrieved_at, as_embed=as_embed)
-            await utils.discord.reply_with_output_and_files(ctx, output, file_paths, output_is_embeds=as_embed)
-            for file_path in file_paths:
-                os.remove(file_path)
-    elif error:
-        raise Error(str(error))
-    else:
-        leading_space_note = ''
-        if fleet_name.startswith(' '):
-            leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
-        raise NotFound(f'Could not find a fleet named `{fleet_name}` that participated in the {year} {calendar.month_name[int(month)]} tournament.{leading_space_note}')
+#         if fleet_info:
+#             output = await fleet.get_fleet_users_stars_from_tournament_data(ctx, fleet_info, tourney_data.fleets, tourney_data.users, tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     else:
+#         leading_space_note = ''
+#         if fleet_name.startswith(' '):
+#             leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
+#         raise NotFound(f'Could not find a fleet named `{fleet_name}` that participated in the {year} {calendar.month_name[int(month)]} tournament.{leading_space_note}')
+#     await utils.discord.reply_with_output(ctx, output)
 
 
-@cmd_past.command(name='fleets', aliases=['alliances'], brief='Get historic fleet data', hidden=True)
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_past_fleets(ctx: Context, month: str = None, year: str = None):
-    """
-    Get historic tournament fleet data.
+# @cmd_past.command(name='fleet', aliases=['alliance'], brief='Get historic fleet data')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_past_fleet(ctx: Context, month: str = None, year: str = None, *, fleet_name: str = None):
+#     """
+#     Get historic tournament fleet data.
 
-    Parameters:
-      month:      Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
-      year:       Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
-      fleet_name: Mandatory. The fleet for which the data should be displayed.
+#     Parameters:
+#       month:      Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
+#       year:       Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
+#       fleet_name: Mandatory. The fleet for which the data should be displayed.
 
-    If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
-    """
-    __log_command_use(ctx)
-    error = None
-    utc_now = utils.get_utc_now()
-    (month, year, _) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
-    if year is not None and month is None:
-        raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
+#     If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
+#     """
+#     __log_command_use(ctx)
+#     error = None
+#     utc_now = utils.get_utc_now()
+#     (month, year, fleet_name) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
+#     if year is not None and month is None:
+#         raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
+#     if not fleet_name:
+#         raise MissingParameterError('The parameter `fleet_name` is mandatory.')
 
-    month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
-    tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
+#     month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
+#     tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
 
-    if tourney_data and tourney_data.fleets and tourney_data.users:
-        file_name = f'tournament_results_{year}-{utils.datetime.get_month_short_name(tourney_data.retrieved_at).lower()}.csv'
-        file_paths = [fleet.create_fleets_sheet_csv(tourney_data.users, tourney_data.retrieved_at, file_name)]
-        await utils.discord.reply_with_output_and_files(ctx, [], file_paths)
-        for file_path in file_paths:
-            os.remove(file_path)
-    elif error:
-        raise Error(str(error))
-    else:
-        raise Error(f'An error occured while retrieving tournament results for the {year} {calendar.month_name[int(month)]} tournament. Please contact the bot\'s author!')
+#     if tourney_data is None:
+#         fleet_infos = []
+#     else:
+#         fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, tourney_data.fleets)
 
+#     if fleet_infos:
+#         if len(fleet_infos) == 1:
+#             fleet_info = fleet_infos[0]
+#         else:
+#             use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#             paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
+#             _, fleet_info = await paginator.wait_for_option_selection()
 
-@cmd_past.command(name='player', aliases=['user'], brief='Get historic player data')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_past_player(ctx: Context, month: str = None, year: str = None, *, player_name: str = None):
-    """
-    Get historic tournament player data.
-
-    Parameters:
-      month:       Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
-      year:        Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
-      player_name: Mandatory. The player for which the data should be displayed.
-
-    If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
-    """
-    __log_command_use(ctx)
-    output = []
-    error = None
-    utc_now = utils.get_utc_now()
-    (month, year, player_name) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
-    if year is not None and month is None:
-        raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
-    if not player_name:
-        raise MissingParameterError('The parameter `player_name` is mandatory.')
-
-    month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
-    try:
-        tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
-    except ValueError as err:
-        error = str(err)
-        tourney_data = None
-
-    if tourney_data is None:
-        user_infos = []
-    else:
-        user_infos = await user.get_user_infos_from_tournament_data_by_name(player_name, tourney_data.users)
-
-    if user_infos:
-        if len(user_infos) == 1:
-            user_info = user_infos[0]
-        else:
-            use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-            paginator = pagination.Paginator(ctx, player_name, user_infos, user.get_user_search_details, use_pagination)
-            _, user_info = await paginator.wait_for_option_selection()
-
-        if user_info:
-            output = await user.get_user_details_by_info(ctx, user_info, retrieved_at=tourney_data.retrieved_at, past_fleet_infos=tourney_data.fleets, as_embed=(await server_settings.get_use_embeds(ctx)))
-    elif error:
-        raise Error(str(error))
-    else:
-        leading_space_note = ''
-        if player_name.startswith(' '):
-            leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
-        raise NotFound(f'Could not find a player named `{player_name}` that participated in the {year} {calendar.month_name[int(month)]} tournament.{leading_space_note}')
-    await utils.discord.reply_with_output(ctx, output)
+#         if fleet_info:
+#             as_embed = await server_settings.get_use_embeds(ctx)
+#             output, file_paths = await fleet.get_full_fleet_info_as_text(ctx, fleet_info, past_fleets_data=tourney_data.fleets, past_users_data=tourney_data.users, past_retrieved_at=tourney_data.retrieved_at, as_embed=as_embed)
+#             await utils.discord.reply_with_output_and_files(ctx, output, file_paths, output_is_embeds=as_embed)
+#             for file_path in file_paths:
+#                 os.remove(file_path)
+#     elif error:
+#         raise Error(str(error))
+#     else:
+#         leading_space_note = ''
+#         if fleet_name.startswith(' '):
+#             leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
+#         raise NotFound(f'Could not find a fleet named `{fleet_name}` that participated in the {year} {calendar.month_name[int(month)]} tournament.{leading_space_note}')
 
 
-@BOT.command(name='player', aliases=['user'], brief='Get infos on a player')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_player(ctx: Context, *, player_name: str = None):
-    """
-    Get details on a player. If the provided player name does not match any player exactly, you will be prompted to select from a list of results. The selection prompt will time out after 60 seconds. Due to restrictions by SavySoda, it will print 10 options max at a time.
+# @cmd_past.command(name='fleets', aliases=['alliances'], brief='Get historic fleet data', hidden=True)
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_past_fleets(ctx: Context, month: str = None, year: str = None):
+#     """
+#     Get historic tournament fleet data.
 
-    Usage:
-      /player [player_name]
-      /user [player_name]
+#     Parameters:
+#       month:      Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
+#       year:       Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
+#       fleet_name: Mandatory. The fleet for which the data should be displayed.
 
-    Parameters:
-      player_name: Mandatory. The (beginning of the) name of the player to search for.
+#     If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
+#     """
+#     __log_command_use(ctx)
+#     error = None
+#     utc_now = utils.get_utc_now()
+#     (month, year, _) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
+#     if year is not None and month is None:
+#         raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
 
-    Examples:
-      /player Namith - Offers a list of players having a name starting with 'Namith'. Upon selection prints player details.
-    """
-    __log_command_use(ctx)
-    exact_name = utils.discord.get_exact_args(ctx)
-    if exact_name:
-        player_name = exact_name
-    if not player_name:
-        raise MissingParameterError('The parameter `player_name` is mandatory.')
-    user_infos = await user.get_users_infos_by_name(player_name)
+#     month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
+#     tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
 
-    if user_infos:
-        if len(user_infos) == 1:
-            user_info = user_infos[0]
-        else:
-            use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-            paginator = pagination.Paginator(ctx, player_name, user_infos, user.get_user_search_details, use_pagination)
-            _, user_info = await paginator.wait_for_option_selection()
+#     if tourney_data and tourney_data.fleets and tourney_data.users:
+#         file_name = f'tournament_results_{year}-{utils.datetime.get_month_short_name(tourney_data.retrieved_at).lower()}.csv'
+#         file_paths = [fleet.create_fleets_sheet_csv(tourney_data.users, tourney_data.retrieved_at, file_name)]
+#         await utils.discord.reply_with_output_and_files(ctx, [], file_paths)
+#         for file_path in file_paths:
+#             os.remove(file_path)
+#     elif error:
+#         raise Error(str(error))
+#     else:
+#         raise Error(f'An error occured while retrieving tournament results for the {year} {calendar.month_name[int(month)]} tournament. Please contact the bot\'s author!')
 
-        if user_info:
-            if tourney.is_tourney_running():
-                yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
-                if yesterday_tourney_data:
-                    yesterday_user_info = yesterday_tourney_data.users.get(user_info[user.USER_KEY_NAME], {})
-                    user_info['YesterdayAllianceScore'] = yesterday_user_info.get('AllianceScore', '0')
-            max_tourney_battle_attempts = await tourney.get_max_tourney_battle_attempts()
-            output = await user.get_user_details_by_info(ctx, user_info, max_tourney_battle_attempts=max_tourney_battle_attempts, as_embed=(await server_settings.get_use_embeds(ctx)))
-            await utils.discord.reply_with_output(ctx, output)
-    else:
-        leading_space_note = ''
-        if player_name.startswith(' '):
-            leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the player name.'
-        raise NotFound(f'Could not find a player named `{player_name}`.{leading_space_note}')
+
+# @cmd_past.command(name='player', aliases=['user'], brief='Get historic player data')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_past_player(ctx: Context, month: str = None, year: str = None, *, player_name: str = None):
+#     """
+#     Get historic tournament player data.
+
+#     Parameters:
+#       month:       Optional. The month for which the data should be retrieved. Can be a number from 1 to 12, the month's name (January, ...) or the month's short name (Jan, ...)
+#       year:        Optional. The year for which the data should be retrieved. If the year is specified, the month has to be specified, too.
+#       player_name: Mandatory. The player for which the data should be displayed.
+
+#     If one or more of the date parameters are not specified, the bot will attempt to select the best matching month.
+#     """
+#     __log_command_use(ctx)
+#     output = []
+#     error = None
+#     utc_now = utils.get_utc_now()
+#     (month, year, player_name) = TourneyDataClient.retrieve_past_parameters(ctx, month, year)
+#     if year is not None and month is None:
+#         raise MissingParameterError('If the parameter `year` is specified, the parameter `month` must be specified, too.')
+#     if not player_name:
+#         raise MissingParameterError('The parameter `player_name` is mandatory.')
+
+#     month, year = TourneyDataClient.retrieve_past_month_year(month, year, utc_now)
+#     try:
+#         tourney_data = TOURNEY_DATA_CLIENT.get_data(year, month)
+#     except ValueError as err:
+#         error = str(err)
+#         tourney_data = None
+
+#     if tourney_data is None:
+#         user_infos = []
+#     else:
+#         user_infos = await user.get_user_infos_from_tournament_data_by_name(player_name, tourney_data.users)
+
+#     if user_infos:
+#         if len(user_infos) == 1:
+#             user_info = user_infos[0]
+#         else:
+#             use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#             paginator = pagination.Paginator(ctx, player_name, user_infos, user.get_user_search_details, use_pagination)
+#             _, user_info = await paginator.wait_for_option_selection()
+
+#         if user_info:
+#             output = await user.get_user_details_by_info(ctx, user_info, retrieved_at=tourney_data.retrieved_at, past_fleet_infos=tourney_data.fleets, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     elif error:
+#         raise Error(str(error))
+#     else:
+#         leading_space_note = ''
+#         if player_name.startswith(' '):
+#             leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
+#         raise NotFound(f'Could not find a player named `{player_name}` that participated in the {year} {calendar.month_name[int(month)]} tournament.{leading_space_note}')
+#     await utils.discord.reply_with_output(ctx, output)
+
+
+# @BOT.command(name='player', aliases=['user'], brief='Get infos on a player')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_player(ctx: Context, *, player_name: str = None):
+#     """
+#     Get details on a player. If the provided player name does not match any player exactly, you will be prompted to select from a list of results. The selection prompt will time out after 60 seconds. Due to restrictions by SavySoda, it will print 10 options max at a time.
+
+#     Usage:
+#       /player [player_name]
+#       /user [player_name]
+
+#     Parameters:
+#       player_name: Mandatory. The (beginning of the) name of the player to search for.
+
+#     Examples:
+#       /player Namith - Offers a list of players having a name starting with 'Namith'. Upon selection prints player details.
+#     """
+#     __log_command_use(ctx)
+#     exact_name = utils.discord.get_exact_args(ctx)
+#     if exact_name:
+#         player_name = exact_name
+#     if not player_name:
+#         raise MissingParameterError('The parameter `player_name` is mandatory.')
+#     user_infos = await user.get_users_infos_by_name(player_name)
+
+#     if user_infos:
+#         if len(user_infos) == 1:
+#             user_info = user_infos[0]
+#         else:
+#             use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#             paginator = pagination.Paginator(ctx, player_name, user_infos, user.get_user_search_details, use_pagination)
+#             _, user_info = await paginator.wait_for_option_selection()
+
+#         if user_info:
+#             if tourney.is_tourney_running():
+#                 yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
+#                 if yesterday_tourney_data:
+#                     yesterday_user_info = yesterday_tourney_data.users.get(user_info[user.USER_KEY_NAME], {})
+#                     user_info['YesterdayAllianceScore'] = yesterday_user_info.get('AllianceScore', '0')
+#             max_tourney_battle_attempts = await tourney.get_max_tourney_battle_attempts()
+#             output = await user.get_user_details_by_info(ctx, user_info, max_tourney_battle_attempts=max_tourney_battle_attempts, as_embed=(await server_settings.get_use_embeds(ctx)))
+#             await utils.discord.reply_with_output(ctx, output)
+#     else:
+#         leading_space_note = ''
+#         if player_name.startswith(' '):
+#             leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the player name.'
+#         raise NotFound(f'Could not find a player named `{player_name}`.{leading_space_note}')
 
 
 # @BOT.command(name='prestige', brief='Get prestige combos of crew')
@@ -1625,88 +1625,88 @@ async def cmd_player(ctx: Context, *, player_name: str = None):
 #         raise Error('An unknown error ocurred, please contact the bot\'s author.')
 
 
-@BOT.group(name='stars', brief='Division stars', invoke_without_command=True)
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_stars(ctx: Context, *, division: str = None):
-    """
-    Get stars earned by each fleet during the current final tournament week.
+# @BOT.group(name='stars', brief='Division stars', invoke_without_command=True)
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_stars(ctx: Context, *, division: str = None):
+#     """
+#     Get stars earned by each fleet during the current final tournament week.
 
-    Usage:
-      /stars
-      /stars <division>
+#     Usage:
+#       /stars
+#       /stars <division>
 
-    Parameters:
-      division: Optional. The letter of the division to show the star counts for. Valid values: [A, B, C, D]
+#     Parameters:
+#       division: Optional. The letter of the division to show the star counts for. Valid values: [A, B, C, D]
 
-    Examples:
-      /stars - Prints the star count for every fleet competing in the current tournament finals.
-      /stars A - Prints the star count for every fleet competing in division A in the current tournament finals.
+#     Examples:
+#       /stars - Prints the star count for every fleet competing in the current tournament finals.
+#       /stars A - Prints the star count for every fleet competing in division A in the current tournament finals.
 
-    Notes:
-      This command does not work outside of the tournament finals week.
-    """
-    __log_command_use(ctx)
-    if tourney.is_tourney_running():
-        if not pss_top.is_valid_division_letter(division):
-            subcommand = BOT.get_command('stars fleet')
-            await ctx.invoke(subcommand, fleet_name=division)
-            return
-        else:
-            output = await pss_top.get_division_stars(ctx, division=division, as_embed=(await server_settings.get_use_embeds(ctx)))
-        await utils.discord.reply_with_output(ctx, output)
-    else:
-        cmd = BOT.get_command('past stars')
-        await ctx.invoke(cmd, month=None, year=None, division=division)
+#     Notes:
+#       This command does not work outside of the tournament finals week.
+#     """
+#     __log_command_use(ctx)
+#     if tourney.is_tourney_running():
+#         if not pss_top.is_valid_division_letter(division):
+#             subcommand = BOT.get_command('stars fleet')
+#             await ctx.invoke(subcommand, fleet_name=division)
+#             return
+#         else:
+#             output = await pss_top.get_division_stars(ctx, division=division, as_embed=(await server_settings.get_use_embeds(ctx)))
+#         await utils.discord.reply_with_output(ctx, output)
+#     else:
+#         cmd = BOT.get_command('past stars')
+#         await ctx.invoke(cmd, month=None, year=None, division=division)
 
 
-@cmd_stars.command(name='fleet', aliases=['alliance'], brief='Fleet stars')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_stars_fleet(ctx: Context, *, fleet_name: str = None):
-    """
-    Get stars earned by the specified fleet during the current final tournament week. If the provided fleet name does not match any fleet exactly, you will be prompted to select from a list of results. The selection prompt will time out after 60 seconds.
+# @cmd_stars.command(name='fleet', aliases=['alliance'], brief='Fleet stars')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_stars_fleet(ctx: Context, *, fleet_name: str = None):
+#     """
+#     Get stars earned by the specified fleet during the current final tournament week. If the provided fleet name does not match any fleet exactly, you will be prompted to select from a list of results. The selection prompt will time out after 60 seconds.
 
-    Usage:
-      /stars
-      /stars fleet [fleet_name]
+#     Usage:
+#       /stars
+#       /stars fleet [fleet_name]
 
-    Parameters:
-      fleet_name: Mandatory. The (beginning of the) name of a fleet to show the star counts for.
+#     Parameters:
+#       fleet_name: Mandatory. The (beginning of the) name of a fleet to show the star counts for.
 
-    Examples:
-      /stars fleet HYDRA - Offers a list of fleets having a name starting with 'hydra'. Upon selection, prints the star count for every member of the fleet, if it competes in the current tournament finals.
+#     Examples:
+#       /stars fleet HYDRA - Offers a list of fleets having a name starting with 'hydra'. Upon selection, prints the star count for every member of the fleet, if it competes in the current tournament finals.
 
-    Notes:
-      If this command is being called outside of the tournament finals week, it will show historic data for the last tournament.
-    """
-    __log_command_use(ctx)
-    if tourney.is_tourney_running():
-        exact_name = utils.discord.get_exact_args(ctx)
-        if exact_name:
-            fleet_name = exact_name
-        if not fleet_name:
-            raise MissingParameterError('The parameter `fleet_name` is mandatory.')
+#     Notes:
+#       If this command is being called outside of the tournament finals week, it will show historic data for the last tournament.
+#     """
+#     __log_command_use(ctx)
+#     if tourney.is_tourney_running():
+#         exact_name = utils.discord.get_exact_args(ctx)
+#         if exact_name:
+#             fleet_name = exact_name
+#         if not fleet_name:
+#             raise MissingParameterError('The parameter `fleet_name` is mandatory.')
 
-        fleet_infos = await fleet.get_fleet_infos_by_name(fleet_name)
-        fleet_infos = [fleet_info for fleet_info in fleet_infos if fleet_info[pss_top.DIVISION_DESIGN_KEY_NAME] != '0']
+#         fleet_infos = await fleet.get_fleet_infos_by_name(fleet_name)
+#         fleet_infos = [fleet_info for fleet_info in fleet_infos if fleet_info[pss_top.DIVISION_DESIGN_KEY_NAME] != '0']
 
-        if fleet_infos:
-            if len(fleet_infos) == 1:
-                fleet_info = fleet_infos[0]
-            else:
-                use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-                paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
-                _, fleet_info = await paginator.wait_for_option_selection()
+#         if fleet_infos:
+#             if len(fleet_infos) == 1:
+#                 fleet_info = fleet_infos[0]
+#             else:
+#                 use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#                 paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
+#                 _, fleet_info = await paginator.wait_for_option_selection()
 
-            if fleet_info:
-                max_tourney_battle_attempts = await tourney.get_max_tourney_battle_attempts()
-                fleet_users_infos = await fleet.get_fleet_users_data_by_fleet_info(fleet_info)
-                output = await fleet.get_fleet_users_stars_from_info(ctx, fleet_info, fleet_users_infos, max_tourney_battle_attempts, as_embed=(await server_settings.get_use_embeds(ctx)))
-                await utils.discord.reply_with_output(ctx, output)
-        else:
-            raise NotFound(f'Could not find a fleet named `{fleet_name}` participating in the current tournament.')
-    else:
-        cmd = BOT.get_command('past stars fleet')
-        await ctx.invoke(cmd, month=None, year=None, fleet_name=fleet_name)
+#             if fleet_info:
+#                 max_tourney_battle_attempts = await tourney.get_max_tourney_battle_attempts()
+#                 fleet_users_infos = await fleet.get_fleet_users_data_by_fleet_info(fleet_info)
+#                 output = await fleet.get_fleet_users_stars_from_info(ctx, fleet_info, fleet_users_infos, max_tourney_battle_attempts, as_embed=(await server_settings.get_use_embeds(ctx)))
+#                 await utils.discord.reply_with_output(ctx, output)
+#         else:
+#             raise NotFound(f'Could not find a fleet named `{fleet_name}` participating in the current tournament.')
+#     else:
+#         cmd = BOT.get_command('past stars fleet')
+#         await ctx.invoke(cmd, month=None, year=None, fleet_name=fleet_name)
 
 
 # @BOT.command(name='stats', aliases=['stat'], brief='Get item/crew stats')
@@ -2021,98 +2021,98 @@ async def cmd_targets_top(ctx: Context, division: str, count: int = None, fleet_
 #     await utils.discord.reply_with_output(ctx, output)
 
 
-@BOT.group(name='top', brief='Prints top fleets or captains', invoke_without_command=True)
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_top(ctx: Context, *, count: str = '100'):
-    """
-    Prints either top fleets or captains. Prints top 100 fleets by default.
+# @BOT.group(name='top', brief='Prints top fleets or captains', invoke_without_command=True)
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_top(ctx: Context, *, count: str = '100'):
+#     """
+#     Prints either top fleets or captains. Prints top 100 fleets by default.
 
-    Usage:
-      /top <count>
+#     Usage:
+#       /top <count>
 
-    Parameters:
-      count: Optional. The number of rows to be printed.
+#     Parameters:
+#       count: Optional. The number of rows to be printed.
 
-    Examples:
-      /top - prints top 100 fleets.
-      /top 30 - prints top 30 fleets."""
-    __log_command_use(ctx)
-    if ctx.invoked_subcommand is None:
-        if ' ' in count:
-            split_count = count.split(' ')
-            try:
-                count = int(split_count[0])
-            except:
-                try:
-                    count = int(split_count[1])
-                except:
-                    raise ParameterTypeError('Invalid parameter provided! Parameter `count` must be a natural number from 1 to 100.')
-                command = split_count[0]
-            command = split_count[1]
-        else:
-            try:
-                count = int(count)
-            except:
-                raise ParameterTypeError('Invalid parameter provided! Parameter `count` must be a natural number from 1 to 100.')
-            command = 'fleets'
-        cmd = BOT.get_command(f'top {command}')
-        await ctx.invoke(cmd, count=count)
-
-
-@cmd_top.command(name='players', aliases=['player', 'captains', 'captain', 'users', 'user'], brief='Prints top captains')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_top_captains(ctx: Context, count: str = '100'):
-    """
-    Prints top captains. Prints top 100 captains by default.
-
-    Usage:
-      /top captains <count>
-      /top <count> captains
-
-    Parameters:
-      count: Optional. The number of rows to be printed.
-
-    Examples:
-      /top captains - prints top 100 captains.
-      /top captains 30 - prints top 30 captains.
-      /top 30 captains - prints top 30 captains."""
-    __log_command_use(ctx)
-
-    try:
-        count = int(count)
-    except:
-        raise ParameterTypeError('Parameter `count` must be a natural number from 1 to 100.')
-
-    output = await pss_top.get_top_captains(ctx, count, as_embed=(await server_settings.get_use_embeds(ctx)))
-    await utils.discord.reply_with_output(ctx, output)
+#     Examples:
+#       /top - prints top 100 fleets.
+#       /top 30 - prints top 30 fleets."""
+#     __log_command_use(ctx)
+#     if ctx.invoked_subcommand is None:
+#         if ' ' in count:
+#             split_count = count.split(' ')
+#             try:
+#                 count = int(split_count[0])
+#             except:
+#                 try:
+#                     count = int(split_count[1])
+#                 except:
+#                     raise ParameterTypeError('Invalid parameter provided! Parameter `count` must be a natural number from 1 to 100.')
+#                 command = split_count[0]
+#             command = split_count[1]
+#         else:
+#             try:
+#                 count = int(count)
+#             except:
+#                 raise ParameterTypeError('Invalid parameter provided! Parameter `count` must be a natural number from 1 to 100.')
+#             command = 'fleets'
+#         cmd = BOT.get_command(f'top {command}')
+#         await ctx.invoke(cmd, count=count)
 
 
-@cmd_top.command(name='fleets', aliases=['fleet', 'alliances', 'alliance'], brief='Prints top fleets')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_top_fleets(ctx: Context, count: str = '100'):
-    """
-    Prints top fleets. Prints top 100 fleets by default.
+# @cmd_top.command(name='players', aliases=['player', 'captains', 'captain', 'users', 'user'], brief='Prints top captains')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_top_captains(ctx: Context, count: str = '100'):
+#     """
+#     Prints top captains. Prints top 100 captains by default.
 
-    Usage:
-      /top fleets <count>
-      /top <count> fleets
+#     Usage:
+#       /top captains <count>
+#       /top <count> captains
 
-    Parameters:
-      count: Optional. The number of rows to be printed.
+#     Parameters:
+#       count: Optional. The number of rows to be printed.
 
-    Examples:
-      /top fleets - prints top 100 fleets.
-      /top fleets 30 - prints top 30 fleets.
-      /top 30 fleets - prints top 30 fleets."""
-    __log_command_use(ctx)
+#     Examples:
+#       /top captains - prints top 100 captains.
+#       /top captains 30 - prints top 30 captains.
+#       /top 30 captains - prints top 30 captains."""
+#     __log_command_use(ctx)
 
-    try:
-        count = int(count)
-    except:
-        raise ParameterTypeError('Parameter `count` must be a natural number from 1 to 100.')
+#     try:
+#         count = int(count)
+#     except:
+#         raise ParameterTypeError('Parameter `count` must be a natural number from 1 to 100.')
 
-    output = await pss_top.get_top_fleets(ctx, take=count, as_embed=(await server_settings.get_use_embeds(ctx)))
-    await utils.discord.reply_with_output(ctx, output)
+#     output = await pss_top.get_top_captains(ctx, count, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     await utils.discord.reply_with_output(ctx, output)
+
+
+# @cmd_top.command(name='fleets', aliases=['fleet', 'alliances', 'alliance'], brief='Prints top fleets')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_top_fleets(ctx: Context, count: str = '100'):
+#     """
+#     Prints top fleets. Prints top 100 fleets by default.
+
+#     Usage:
+#       /top fleets <count>
+#       /top <count> fleets
+
+#     Parameters:
+#       count: Optional. The number of rows to be printed.
+
+#     Examples:
+#       /top fleets - prints top 100 fleets.
+#       /top fleets 30 - prints top 30 fleets.
+#       /top 30 fleets - prints top 30 fleets."""
+#     __log_command_use(ctx)
+
+#     try:
+#         count = int(count)
+#     except:
+#         raise ParameterTypeError('Parameter `count` must be a natural number from 1 to 100.')
+
+#     output = await pss_top.get_top_fleets(ctx, take=count, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     await utils.discord.reply_with_output(ctx, output)
 
 
 # @BOT.group(name='tournament', aliases=['tourney'], brief='Information on tournament time')
@@ -2207,180 +2207,180 @@ async def cmd_top_fleets(ctx: Context, count: str = '100'):
 #     await utils.discord.reply_with_output(ctx, output)
 
 
-@BOT.group(name='yesterday', brief='Get yesterday\'s tourney results', invoke_without_command=True)
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_yesterday(ctx: Context) -> None:
-    """
-    Get yesterday's final tournament standings.
+# @BOT.group(name='yesterday', brief='Get yesterday\'s tourney results', invoke_without_command=True)
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_yesterday(ctx: Context) -> None:
+#     """
+#     Get yesterday's final tournament standings.
 
-    Usage:
-      Use one of the subcommands.
-    """
-    if ctx.invoked_subcommand is None:
-        await ctx.send_help('yesterday')
-
-
-@cmd_yesterday.command(name='fleet', aliases=['alliance'], brief='Get yesterday\'s fleet data')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_yesterday_fleet(ctx: Context, *, fleet_name: str = None):
-    """
-    Get yesterday's tournament fleet data.
-
-    Parameters:
-      fleet_name: Mandatory. The fleet for which the data should be displayed.
-    """
-    __log_command_use(ctx)
-    utc_now = utils.get_utc_now()
-    tourney_day = tourney.get_tourney_day(utc_now)
-    if tourney_day is None:
-        raise Error('There\'s no tournament running currently.')
-    if not tourney_day:
-        raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
-    output = []
-
-    yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
-    if yesterday_tourney_data is None:
-        yesterday_fleet_infos = []
-    else:
-        yesterday_fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, yesterday_tourney_data.fleets)
-
-    if yesterday_fleet_infos:
-        if len(yesterday_fleet_infos) == 1:
-            fleet_info = yesterday_fleet_infos[0]
-        else:
-            use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-            paginator = pagination.Paginator(ctx, fleet_name, yesterday_fleet_infos, fleet.get_fleet_search_details, use_pagination)
-            _, fleet_info = await paginator.wait_for_option_selection()
-
-        if fleet_info:
-            fleet_id = fleet_info[fleet.FLEET_KEY_NAME]
-            day_before_tourney_data = TOURNEY_DATA_CLIENT.get_second_latest_daily_data()
-            yesterday_users_data = {user_id: user_info for user_id, user_info in yesterday_tourney_data.users.items() if user_info[fleet.FLEET_KEY_NAME] == fleet_id}
-            day_before_users_data = {user_id: user_info for user_id, user_info in day_before_tourney_data.users.items() if user_info[fleet.FLEET_KEY_NAME] == fleet_id}
-            for yesterday_user_info in yesterday_users_data.values():
-                day_before_user_info = day_before_users_data.get(yesterday_user_info[user.USER_KEY_NAME], {})
-                day_before_star_count = day_before_user_info.get('AllianceScore', 0)
-                yesterday_user_info['StarValue'], _ = user.get_star_value_from_user_info(yesterday_user_info, star_count=day_before_star_count)
-            as_embed = await server_settings.get_use_embeds(ctx)
-            output, file_paths = await fleet.get_full_fleet_info_as_text(ctx, fleet_info, max_tourney_battle_attempts=6, past_fleets_data=yesterday_tourney_data.fleets, past_users_data=yesterday_users_data, past_retrieved_at=yesterday_tourney_data.retrieved_at, as_embed=as_embed)
-            await utils.discord.reply_with_output_and_files(ctx, output, file_paths, output_is_embeds=as_embed)
-            for file_path in file_paths:
-                os.remove(file_path)
-    else:
-        leading_space_note = ''
-        if fleet_name.startswith(' '):
-            leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
-        raise NotFound(f'Could not find a fleet named `{fleet_name}` participating in current tournament.{leading_space_note}')
+#     Usage:
+#       Use one of the subcommands.
+#     """
+#     if ctx.invoked_subcommand is None:
+#         await ctx.send_help('yesterday')
 
 
-@cmd_yesterday.command(name='player', aliases=['user'], brief='Get yesterday\'s player data')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_yesterday_player(ctx: Context, *, player_name: str = None):
-    """
-    Get historic tournament player data.
+# @cmd_yesterday.command(name='fleet', aliases=['alliance'], brief='Get yesterday\'s fleet data')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_yesterday_fleet(ctx: Context, *, fleet_name: str = None):
+#     """
+#     Get yesterday's tournament fleet data.
 
-    Parameters:
-      player_name: Mandatory. The player for which the data should be displayed.
-    """
-    __log_command_use(ctx)
-    utc_now = utils.get_utc_now()
-    tourney_day = tourney.get_tourney_day(utc_now)
-    if tourney_day is None:
-        raise Error('There\'s no tournament running currently.')
-    if not tourney_day:
-        raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
-    output = []
+#     Parameters:
+#       fleet_name: Mandatory. The fleet for which the data should be displayed.
+#     """
+#     __log_command_use(ctx)
+#     utc_now = utils.get_utc_now()
+#     tourney_day = tourney.get_tourney_day(utc_now)
+#     if tourney_day is None:
+#         raise Error('There\'s no tournament running currently.')
+#     if not tourney_day:
+#         raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
+#     output = []
 
-    yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
-    if yesterday_tourney_data is None:
-        user_infos = []
-    else:
-        user_infos = await user.get_user_infos_from_tournament_data_by_name(player_name, yesterday_tourney_data.users)
+#     yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
+#     if yesterday_tourney_data is None:
+#         yesterday_fleet_infos = []
+#     else:
+#         yesterday_fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, yesterday_tourney_data.fleets)
 
-    if user_infos:
-        if len(user_infos) == 1:
-            user_info = user_infos[0]
-        else:
-            use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-            paginator = pagination.Paginator(ctx, player_name, user_infos, user.get_user_search_details, use_pagination)
-            _, user_info = await paginator.wait_for_option_selection()
+#     if yesterday_fleet_infos:
+#         if len(yesterday_fleet_infos) == 1:
+#             fleet_info = yesterday_fleet_infos[0]
+#         else:
+#             use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#             paginator = pagination.Paginator(ctx, fleet_name, yesterday_fleet_infos, fleet.get_fleet_search_details, use_pagination)
+#             _, fleet_info = await paginator.wait_for_option_selection()
 
-        if user_info:
-            output = await user.get_user_details_by_info(ctx, user_info, retrieved_at=yesterday_tourney_data.retrieved_at, past_fleet_infos=yesterday_tourney_data.fleets, as_embed=(await server_settings.get_use_embeds(ctx)))
-    else:
-        leading_space_note = ''
-        if player_name.startswith(' '):
-            leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
-        raise NotFound(f'Could not find a player named `{player_name}` participating in the current tournament.{leading_space_note}')
-    await utils.discord.reply_with_output(ctx, output)
-
-
-@cmd_yesterday.group(name='stars', brief='Get yesterday\'s division stars', invoke_without_command=True)
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_yesterday_stars(ctx: Context, *, division: str = None):
-    """
-    Get yesterday's final tournament division standings.
-    """
-    __log_command_use(ctx)
-    utc_now = utils.get_utc_now()
-    tourney_day = tourney.get_tourney_day(utc_now)
-    if tourney_day is None:
-        raise Error('There\'s no tournament running currently.')
-    if not tourney_day:
-        raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
-    output = []
-
-    if not pss_top.is_valid_division_letter(division):
-        subcommand = BOT.get_command('yesterday stars fleet')
-        await ctx.invoke(subcommand, fleet_name=division)
-        return
-    else:
-        yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
-        if yesterday_tourney_data:
-            output = await pss_top.get_division_stars(ctx, division=division, fleet_data=yesterday_tourney_data.fleets, retrieved_date=yesterday_tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
-    await utils.discord.reply_with_output(ctx, output)
+#         if fleet_info:
+#             fleet_id = fleet_info[fleet.FLEET_KEY_NAME]
+#             day_before_tourney_data = TOURNEY_DATA_CLIENT.get_second_latest_daily_data()
+#             yesterday_users_data = {user_id: user_info for user_id, user_info in yesterday_tourney_data.users.items() if user_info[fleet.FLEET_KEY_NAME] == fleet_id}
+#             day_before_users_data = {user_id: user_info for user_id, user_info in day_before_tourney_data.users.items() if user_info[fleet.FLEET_KEY_NAME] == fleet_id}
+#             for yesterday_user_info in yesterday_users_data.values():
+#                 day_before_user_info = day_before_users_data.get(yesterday_user_info[user.USER_KEY_NAME], {})
+#                 day_before_star_count = day_before_user_info.get('AllianceScore', 0)
+#                 yesterday_user_info['StarValue'], _ = user.get_star_value_from_user_info(yesterday_user_info, star_count=day_before_star_count)
+#             as_embed = await server_settings.get_use_embeds(ctx)
+#             output, file_paths = await fleet.get_full_fleet_info_as_text(ctx, fleet_info, max_tourney_battle_attempts=6, past_fleets_data=yesterday_tourney_data.fleets, past_users_data=yesterday_users_data, past_retrieved_at=yesterday_tourney_data.retrieved_at, as_embed=as_embed)
+#             await utils.discord.reply_with_output_and_files(ctx, output, file_paths, output_is_embeds=as_embed)
+#             for file_path in file_paths:
+#                 os.remove(file_path)
+#     else:
+#         leading_space_note = ''
+#         if fleet_name.startswith(' '):
+#             leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
+#         raise NotFound(f'Could not find a fleet named `{fleet_name}` participating in current tournament.{leading_space_note}')
 
 
-@cmd_yesterday_stars.command(name='fleet', aliases=['alliance'], brief='Get yesterday\'s fleet stars')
-@cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
-async def cmd_yesterday_stars_fleet(ctx: Context, *, fleet_name: str = None):
-    """
-    Get yesterday's final tournament fleet standings.
+# @cmd_yesterday.command(name='player', aliases=['user'], brief='Get yesterday\'s player data')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_yesterday_player(ctx: Context, *, player_name: str = None):
+#     """
+#     Get historic tournament player data.
 
-    Parameters:
-      fleet_name: Mandatory. The fleet for which the data should be displayed.
-    """
-    __log_command_use(ctx)
-    utc_now = utils.get_utc_now()
-    tourney_day = tourney.get_tourney_day(utc_now)
-    if tourney_day is None:
-        raise Error('There\'s no tournament running currently.')
-    if not tourney_day:
-        raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
-    output = []
+#     Parameters:
+#       player_name: Mandatory. The player for which the data should be displayed.
+#     """
+#     __log_command_use(ctx)
+#     utc_now = utils.get_utc_now()
+#     tourney_day = tourney.get_tourney_day(utc_now)
+#     if tourney_day is None:
+#         raise Error('There\'s no tournament running currently.')
+#     if not tourney_day:
+#         raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
+#     output = []
 
-    yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
-    if yesterday_tourney_data is None:
-        fleet_infos = []
-    else:
-        fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, yesterday_tourney_data.fleets)
+#     yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
+#     if yesterday_tourney_data is None:
+#         user_infos = []
+#     else:
+#         user_infos = await user.get_user_infos_from_tournament_data_by_name(player_name, yesterday_tourney_data.users)
 
-    if fleet_infos:
-        if len(fleet_infos) == 1:
-            fleet_info = fleet_infos[0]
-        else:
-            use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
-            paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
-            _, fleet_info = await paginator.wait_for_option_selection()
+#     if user_infos:
+#         if len(user_infos) == 1:
+#             user_info = user_infos[0]
+#         else:
+#             use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#             paginator = pagination.Paginator(ctx, player_name, user_infos, user.get_user_search_details, use_pagination)
+#             _, user_info = await paginator.wait_for_option_selection()
 
-        if fleet_info:
-            output = await fleet.get_fleet_users_stars_from_tournament_data(ctx, fleet_info, yesterday_tourney_data.fleets, yesterday_tourney_data.users, yesterday_tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
-    else:
-        leading_space_note = ''
-        if fleet_name.startswith(' '):
-            leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
-        raise NotFound(f'Could not find a fleet named `{fleet_name}` participating in the current tournament.{leading_space_note}')
-    await utils.discord.reply_with_output(ctx, output)
+#         if user_info:
+#             output = await user.get_user_details_by_info(ctx, user_info, retrieved_at=yesterday_tourney_data.retrieved_at, past_fleet_infos=yesterday_tourney_data.fleets, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     else:
+#         leading_space_note = ''
+#         if player_name.startswith(' '):
+#             leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
+#         raise NotFound(f'Could not find a player named `{player_name}` participating in the current tournament.{leading_space_note}')
+#     await utils.discord.reply_with_output(ctx, output)
+
+
+# @cmd_yesterday.group(name='stars', brief='Get yesterday\'s division stars', invoke_without_command=True)
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_yesterday_stars(ctx: Context, *, division: str = None):
+#     """
+#     Get yesterday's final tournament division standings.
+#     """
+#     __log_command_use(ctx)
+#     utc_now = utils.get_utc_now()
+#     tourney_day = tourney.get_tourney_day(utc_now)
+#     if tourney_day is None:
+#         raise Error('There\'s no tournament running currently.')
+#     if not tourney_day:
+#         raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
+#     output = []
+
+#     if not pss_top.is_valid_division_letter(division):
+#         subcommand = BOT.get_command('yesterday stars fleet')
+#         await ctx.invoke(subcommand, fleet_name=division)
+#         return
+#     else:
+#         yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
+#         if yesterday_tourney_data:
+#             output = await pss_top.get_division_stars(ctx, division=division, fleet_data=yesterday_tourney_data.fleets, retrieved_date=yesterday_tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     await utils.discord.reply_with_output(ctx, output)
+
+
+# @cmd_yesterday_stars.command(name='fleet', aliases=['alliance'], brief='Get yesterday\'s fleet stars')
+# @cooldown(rate=RATE, per=COOLDOWN, type=BucketType.user)
+# async def cmd_yesterday_stars_fleet(ctx: Context, *, fleet_name: str = None):
+#     """
+#     Get yesterday's final tournament fleet standings.
+
+#     Parameters:
+#       fleet_name: Mandatory. The fleet for which the data should be displayed.
+#     """
+#     __log_command_use(ctx)
+#     utc_now = utils.get_utc_now()
+#     tourney_day = tourney.get_tourney_day(utc_now)
+#     if tourney_day is None:
+#         raise Error('There\'s no tournament running currently.')
+#     if not tourney_day:
+#         raise Error('It\'s day 1 of the current tournament, there is no data from yesterday.')
+#     output = []
+
+#     yesterday_tourney_data = TOURNEY_DATA_CLIENT.get_latest_daily_data()
+#     if yesterday_tourney_data is None:
+#         fleet_infos = []
+#     else:
+#         fleet_infos = await fleet.get_fleet_infos_from_tourney_data_by_name(fleet_name, yesterday_tourney_data.fleets)
+
+#     if fleet_infos:
+#         if len(fleet_infos) == 1:
+#             fleet_info = fleet_infos[0]
+#         else:
+#             use_pagination = await server_settings.db_get_use_pagination(ctx.guild)
+#             paginator = pagination.Paginator(ctx, fleet_name, fleet_infos, fleet.get_fleet_search_details, use_pagination)
+#             _, fleet_info = await paginator.wait_for_option_selection()
+
+#         if fleet_info:
+#             output = await fleet.get_fleet_users_stars_from_tournament_data(ctx, fleet_info, yesterday_tourney_data.fleets, yesterday_tourney_data.users, yesterday_tourney_data.retrieved_at, as_embed=(await server_settings.get_use_embeds(ctx)))
+#     else:
+#         leading_space_note = ''
+#         if fleet_name.startswith(' '):
+#             leading_space_note = '\n**Note:** on some devices, leading spaces won\'t show. Please check, if you\'ve accidently added _two_ spaces in front of the fleet name.'
+#         raise NotFound(f'Could not find a fleet named `{fleet_name}` participating in the current tournament.{leading_space_note}')
+#     await utils.discord.reply_with_output(ctx, output)
 
 
 
@@ -2395,461 +2395,461 @@ async def cmd_yesterday_stars_fleet(ctx: Context, *, fleet_name: str = None):
 # ----------                      Raw commands                      ---------- #
 # ############################################################################ #
 
-@BOT.group(name='raw', brief='Get raw data from the PSS API', invoke_without_command=True, hidden=True)
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw(ctx: Context):
-    """
-    Get raw data from the Pixel Starships API.
-    Use one of the sub-commands to retrieve data for a certain entity type. The sub-commands may have sub-commands on their own, so make sure to check the related help commands.
-
-    Usage:
-      /raw [subcommand] <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the entity of the specified type with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await ctx.send_help('raw')
-
-
-@cmd_raw.command(name='achievement', aliases=['achievements'], brief='Get raw achievement data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_achievement(ctx: Context, *, achievement_id: str = None):
-    """
-    Get raw achievement design data from the PSS API.
-
-    Usage:
-      /raw achievement <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the achievement with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, achievement.achievements_designs_retriever, 'achievement', achievement_id)
-
-
-@cmd_raw.group(name='ai', brief='Get raw ai data', invoke_without_command=True)
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_ai(ctx: Context):
-    """
-    Get raw ai design data from the PSS API.
-
-    Usage:
-      /raw ai [subcommand] <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the entity of the specified type with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await ctx.send_help('raw ai')
-
-
-@cmd_raw_ai.command(name='action', aliases=['actions'], brief='Get raw ai action data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_ai_action(ctx: Context, ai_action_id: int = None):
-    """
-    Get raw ai action design data from the PSS API.
-
-    Usage:
-      /raw ai action <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the ai action with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, ai.action_types_designs_retriever, 'ai_action', ai_action_id)
-
-
-@cmd_raw_ai.command(name='condition', aliases=['conditions'], brief='Get raw ai condition data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_ai_condition(ctx: Context, ai_condition_id: int = None):
-    """
-    Get raw ai condition design data from the PSS API.
-
-    Usage:
-      /raw ai condition <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the ai condition with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, ai.condition_types_designs_retriever, 'ai_condition', ai_condition_id)
-
-
-@cmd_raw.command(name='char', aliases=['crew', 'chars', 'crews'], brief='Get raw crew data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_char(ctx: Context, *, char_id: str = None):
-    """
-    Get raw character design data from the PSS API.
-
-    Usage:
-      /raw char <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the character with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, crew.characters_designs_retriever, 'character', char_id)
-
-
-@cmd_raw.command(name='collection', aliases=['coll', 'collections'], brief='Get raw collection data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_collection(ctx: Context, *, collection_id: str = None):
-    """
-    Get raw collection design data from the PSS API.
-
-    Usage:
-      /raw collection <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the collection with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, crew.collections_designs_retriever, 'collection', collection_id)
-
-
-@cmd_raw.command(name='event', aliases=['events'], brief='Get raw event data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_event(ctx: Context, *, situation_id: str = None):
-    """
-    Get raw event design data (actually situation design data) from the PSS API.
-
-    Usage:
-      /raw event <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the event with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, situation.situations_designs_retriever, 'situation', situation_id)
-
-
-@cmd_raw.group(name='gm', aliases=['galaxymap', 'galaxy'], brief='Get raw gm data', invoke_without_command=True)
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_gm(ctx: Context):
-    """
-    Get raw gm design data from the PSS API.
-
-    Usage:
-      /raw gm [subcommand] <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the entity of the specified type with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await ctx.send_help('raw gm')
-
-
-@cmd_raw_gm.command(name='system', aliases=['systems', 'star', 'stars'], brief='Get raw gm system data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_gm_system(ctx: Context, *, star_system_id: str = None):
-    """
-    Get raw star system design data from the PSS API.
-
-    Usage:
-      /raw gm system <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the GM system with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, gm.star_systems_designs_retriever, 'star system', star_system_id)
-
-
-@cmd_raw_gm.command(name='path', aliases=['paths', 'link', 'links'], brief='Get raw gm path data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_gm_link(ctx: Context, *, star_system_link_id: str = None):
-    """
-    Get raw star system link design data from the PSS API.
-
-    Usage:
-      /raw gm path <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the GM path with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, gm.star_system_links_designs_retriever, 'star system link', star_system_link_id)
-
-
-@cmd_raw.command(name='item', aliases=['items'], brief='Get raw item data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_item(ctx: Context, *, item_id: str = None):
-    """
-    Get raw item design data from the PSS API.
-
-    Usage:
-      /raw item <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the item with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, item.items_designs_retriever, 'item', item_id)
-
-
-@cmd_raw.command(name='mission', aliases=['missions'], brief='Get raw mission data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_mission(ctx: Context, *, mission_id: str = None):
-    """
-    Get raw mission design data from the PSS API.
-
-    Usage:
-      /raw mission <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the mission with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, mission.missions_designs_retriever, 'mission', mission_id)
-
-
-@cmd_raw.command(name='promotion', aliases=['promo', 'promotions', 'promos'], brief='Get raw promotion data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_promotion(ctx: Context, *, promo_id: str = None):
-    """
-    Get raw promotion design data from the PSS API.
-
-    Usage:
-      /raw promotion <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the promotion with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, promo.promotion_designs_retriever, 'promotion', promo_id)
-
-
-@cmd_raw.command(name='research', aliases=['researches'], brief='Get raw research data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_research(ctx: Context, *, research_id: str = None):
-    """
-    Get raw research design data from the PSS API.
-
-    Usage:
-      /raw research <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the research with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, research.researches_designs_retriever, 'research', research_id)
-
-
-@cmd_raw.group(name='room', aliases=['rooms'], brief='Get raw room data', invoke_without_command=True)
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_room(ctx: Context, *, room_id: str = None):
-    """
-    Get raw room design data from the PSS API.
-
-    Usage:
-      /raw room <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the room with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, room.rooms_designs_retriever, 'room', room_id)
-
-
-@cmd_raw_room.command(name='purchase', aliases=['purchases'], brief='Get raw room purchase data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_room_purchase(ctx: Context, *, room_purchase_id: str = None):
-    """
-    Get raw room purchase design data from the PSS API.
-
-    Usage:
-      /raw room purchase <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the room purchase with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, room.rooms_designs_purchases_retriever, 'room purchase', room_purchase_id)
-
-
-@cmd_raw.command(name='ship', aliases=['ships', 'hull', 'hulls'], brief='Get raw ship data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_ship(ctx: Context, *, ship_id: str = None):
-    """
-    Get raw ship design data from the PSS API.
-
-    Usage:
-      /raw ship <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the ship hull with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, ship.ships_designs_retriever, 'ship', ship_id)
-
-
-@cmd_raw.command(name='training', aliases=['trainings'], brief='Get raw training data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_raw_training(ctx: Context, *, training_id: str = None):
-    """
-    Get raw training design data from the PSS API.
-
-    Usage:
-      /raw training <id> <format>
-
-    Parameters:
-      id:     A natural number. If specified, the command will only return the raw data for the training with the specified id.
-      format: A string determining the format of the output to be returned. These are valid values:
-                • --json (JSON)
-                • --xml (raw XML as returned by the API)
-              If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
-      All parameters are optional.
-
-    It may take a while for the bot to create the file, so be patient ;)
-    NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
-    """
-    __log_command_use(ctx)
-    await raw.post_raw_data(ctx, training.trainings_designs_retriever, 'training', training_id)
+# @BOT.group(name='raw', brief='Get raw data from the PSS API', invoke_without_command=True, hidden=True)
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw(ctx: Context):
+#     """
+#     Get raw data from the Pixel Starships API.
+#     Use one of the sub-commands to retrieve data for a certain entity type. The sub-commands may have sub-commands on their own, so make sure to check the related help commands.
+
+#     Usage:
+#       /raw [subcommand] <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the entity of the specified type with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await ctx.send_help('raw')
+
+
+# @cmd_raw.command(name='achievement', aliases=['achievements'], brief='Get raw achievement data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_achievement(ctx: Context, *, achievement_id: str = None):
+#     """
+#     Get raw achievement design data from the PSS API.
+
+#     Usage:
+#       /raw achievement <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the achievement with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, achievement.achievements_designs_retriever, 'achievement', achievement_id)
+
+
+# @cmd_raw.group(name='ai', brief='Get raw ai data', invoke_without_command=True)
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_ai(ctx: Context):
+#     """
+#     Get raw ai design data from the PSS API.
+
+#     Usage:
+#       /raw ai [subcommand] <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the entity of the specified type with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await ctx.send_help('raw ai')
+
+
+# @cmd_raw_ai.command(name='action', aliases=['actions'], brief='Get raw ai action data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_ai_action(ctx: Context, ai_action_id: int = None):
+#     """
+#     Get raw ai action design data from the PSS API.
+
+#     Usage:
+#       /raw ai action <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the ai action with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, ai.action_types_designs_retriever, 'ai_action', ai_action_id)
+
+
+# @cmd_raw_ai.command(name='condition', aliases=['conditions'], brief='Get raw ai condition data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_ai_condition(ctx: Context, ai_condition_id: int = None):
+#     """
+#     Get raw ai condition design data from the PSS API.
+
+#     Usage:
+#       /raw ai condition <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the ai condition with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, ai.condition_types_designs_retriever, 'ai_condition', ai_condition_id)
+
+
+# @cmd_raw.command(name='char', aliases=['crew', 'chars', 'crews'], brief='Get raw crew data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_char(ctx: Context, *, char_id: str = None):
+#     """
+#     Get raw character design data from the PSS API.
+
+#     Usage:
+#       /raw char <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the character with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, crew.characters_designs_retriever, 'character', char_id)
+
+
+# @cmd_raw.command(name='collection', aliases=['coll', 'collections'], brief='Get raw collection data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_collection(ctx: Context, *, collection_id: str = None):
+#     """
+#     Get raw collection design data from the PSS API.
+
+#     Usage:
+#       /raw collection <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the collection with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, crew.collections_designs_retriever, 'collection', collection_id)
+
+
+# @cmd_raw.command(name='event', aliases=['events'], brief='Get raw event data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_event(ctx: Context, *, situation_id: str = None):
+#     """
+#     Get raw event design data (actually situation design data) from the PSS API.
+
+#     Usage:
+#       /raw event <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the event with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, situation.situations_designs_retriever, 'situation', situation_id)
+
+
+# @cmd_raw.group(name='gm', aliases=['galaxymap', 'galaxy'], brief='Get raw gm data', invoke_without_command=True)
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_gm(ctx: Context):
+#     """
+#     Get raw gm design data from the PSS API.
+
+#     Usage:
+#       /raw gm [subcommand] <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the entity of the specified type with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await ctx.send_help('raw gm')
+
+
+# @cmd_raw_gm.command(name='system', aliases=['systems', 'star', 'stars'], brief='Get raw gm system data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_gm_system(ctx: Context, *, star_system_id: str = None):
+#     """
+#     Get raw star system design data from the PSS API.
+
+#     Usage:
+#       /raw gm system <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the GM system with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, gm.star_systems_designs_retriever, 'star system', star_system_id)
+
+
+# @cmd_raw_gm.command(name='path', aliases=['paths', 'link', 'links'], brief='Get raw gm path data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_gm_link(ctx: Context, *, star_system_link_id: str = None):
+#     """
+#     Get raw star system link design data from the PSS API.
+
+#     Usage:
+#       /raw gm path <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the GM path with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, gm.star_system_links_designs_retriever, 'star system link', star_system_link_id)
+
+
+# @cmd_raw.command(name='item', aliases=['items'], brief='Get raw item data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_item(ctx: Context, *, item_id: str = None):
+#     """
+#     Get raw item design data from the PSS API.
+
+#     Usage:
+#       /raw item <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the item with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, item.items_designs_retriever, 'item', item_id)
+
+
+# @cmd_raw.command(name='mission', aliases=['missions'], brief='Get raw mission data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_mission(ctx: Context, *, mission_id: str = None):
+#     """
+#     Get raw mission design data from the PSS API.
+
+#     Usage:
+#       /raw mission <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the mission with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, mission.missions_designs_retriever, 'mission', mission_id)
+
+
+# @cmd_raw.command(name='promotion', aliases=['promo', 'promotions', 'promos'], brief='Get raw promotion data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_promotion(ctx: Context, *, promo_id: str = None):
+#     """
+#     Get raw promotion design data from the PSS API.
+
+#     Usage:
+#       /raw promotion <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the promotion with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, promo.promotion_designs_retriever, 'promotion', promo_id)
+
+
+# @cmd_raw.command(name='research', aliases=['researches'], brief='Get raw research data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_research(ctx: Context, *, research_id: str = None):
+#     """
+#     Get raw research design data from the PSS API.
+
+#     Usage:
+#       /raw research <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the research with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, research.researches_designs_retriever, 'research', research_id)
+
+
+# @cmd_raw.group(name='room', aliases=['rooms'], brief='Get raw room data', invoke_without_command=True)
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_room(ctx: Context, *, room_id: str = None):
+#     """
+#     Get raw room design data from the PSS API.
+
+#     Usage:
+#       /raw room <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the room with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command and its sub-commands are only available to certain users. If you think, you should be eligible to use these commands, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, room.rooms_designs_retriever, 'room', room_id)
+
+
+# @cmd_raw_room.command(name='purchase', aliases=['purchases'], brief='Get raw room purchase data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_room_purchase(ctx: Context, *, room_purchase_id: str = None):
+#     """
+#     Get raw room purchase design data from the PSS API.
+
+#     Usage:
+#       /raw room purchase <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the room purchase with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, room.rooms_designs_purchases_retriever, 'room purchase', room_purchase_id)
+
+
+# @cmd_raw.command(name='ship', aliases=['ships', 'hull', 'hulls'], brief='Get raw ship data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_ship(ctx: Context, *, ship_id: str = None):
+#     """
+#     Get raw ship design data from the PSS API.
+
+#     Usage:
+#       /raw ship <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the ship hull with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, ship.ships_designs_retriever, 'ship', ship_id)
+
+
+# @cmd_raw.command(name='training', aliases=['trainings'], brief='Get raw training data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_raw_training(ctx: Context, *, training_id: str = None):
+#     """
+#     Get raw training design data from the PSS API.
+
+#     Usage:
+#       /raw training <id> <format>
+
+#     Parameters:
+#       id:     A natural number. If specified, the command will only return the raw data for the training with the specified id.
+#       format: A string determining the format of the output to be returned. These are valid values:
+#                 • --json (JSON)
+#                 • --xml (raw XML as returned by the API)
+#               If this parameter is omitted, an Excel spreadsheet will be created or, when having specified an id, a list of properties will be printed.
+#       All parameters are optional.
+
+#     It may take a while for the bot to create the file, so be patient ;)
+#     NOTE: This command is only available to certain users. If you think, you should be eligible to use this command, please contact the author of this bot.
+#     """
+#     __log_command_use(ctx)
+#     await raw.post_raw_data(ctx, training.trainings_designs_retriever, 'training', training_id)
 
 
 
@@ -2864,91 +2864,91 @@ async def cmd_raw_training(ctx: Context, *, training_id: str = None):
 # ----------                     Wiki commands                      ---------- #
 # ############################################################################ #
 
-@BOT.group(name='wiki', brief='Get transformed data for the wiki', invoke_without_command=True, hidden=True)
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_wiki(ctx: Context):
-    """
-    Transform data to be used in the wiki.
-    """
-    if ctx.invoked_subcommand is None:
-        __log_command_use(ctx)
+# @BOT.group(name='wiki', brief='Get transformed data for the wiki', invoke_without_command=True, hidden=True)
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_wiki(ctx: Context):
+#     """
+#     Transform data to be used in the wiki.
+#     """
+#     if ctx.invoked_subcommand is None:
+#         __log_command_use(ctx)
 
-        if ctx.author.id not in settings.RAW_COMMAND_USERS:
-            raise Error('You are not allowed to use this command.')
+#         if ctx.author.id not in settings.RAW_COMMAND_USERS:
+#             raise Error('You are not allowed to use this command.')
 
-        await ctx.send_help('wiki')
-    pass
+#         await ctx.send_help('wiki')
+#     pass
 
 
-@cmd_wiki.command(name='itemdata', brief='Get transformed item data')
-@cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
-async def cmd_wiki_itemdata(ctx: Context):
-    """
-    Transform ItemDesigns data to be used in: https://pixelstarships.fandom.com/wiki/Module:Data
-    """
-    __log_command_use(ctx)
+# @cmd_wiki.command(name='itemdata', brief='Get transformed item data')
+# @cooldown(rate=RAW_RATE, per=RAW_COOLDOWN, type=BucketType.user)
+# async def cmd_wiki_itemdata(ctx: Context):
+#     """
+#     Transform ItemDesigns data to be used in: https://pixelstarships.fandom.com/wiki/Module:Data
+#     """
+#     __log_command_use(ctx)
 
-    if ctx.author.id not in settings.RAW_COMMAND_USERS:
-        raise Error('You are not allowed to use this command.')
+#     if ctx.author.id not in settings.RAW_COMMAND_USERS:
+#         raise Error('You are not allowed to use this command.')
 
-    item_data = await item.items_designs_retriever.get_data_dict3()
-    retrieved_at = utils.get_utc_now()
-    items_list: Dict[int, Dict] = {}
-    result = []
-    for item_id, item_info in item_data.items():
-        if item_info.get('ItemType') != 'Equipment':
-            continue
+#     item_data = await item.items_designs_retriever.get_data_dict3()
+#     retrieved_at = utils.get_utc_now()
+#     items_list: Dict[int, Dict] = {}
+#     result = []
+#     for item_id, item_info in item_data.items():
+#         if item_info.get('ItemType') != 'Equipment':
+#             continue
 
-        bonus: List[Tuple[str, float]] = item.get_all_enhancements(item_info)
-        ingredients: Dict[str, str] = item.get_ingredients_dict(item_info.get('Ingredients'))
-        category = item.get_type(item_info, None)
-        item_properties = {
-            'name': item_info.get(item.ITEM_DESIGN_DESCRIPTION_PROPERTY_NAME, ''),
-            'description': item_info.get('ItemDesignDescription', ''),
-            'rarity': item_info.get('Rarity', ''),
-            'category': category,
-            'useRecipes': f'',
-            'item1ItemId': f'',
-            'item1Quantity': f'',
-            'item2ItemId': f'',
-            'item2Quantity': f'',
-            'item3ItemId': f'',
-            'item3Quantity': f'',
-            'item4ItemId': f'',
-            'item4Quantity': f'',
-        }
+#         bonus: List[Tuple[str, float]] = item.get_all_enhancements(item_info)
+#         ingredients: Dict[str, str] = item.get_ingredients_dict(item_info.get('Ingredients'))
+#         category = item.get_type(item_info, None)
+#         item_properties = {
+#             'name': item_info.get(item.ITEM_DESIGN_DESCRIPTION_PROPERTY_NAME, ''),
+#             'description': item_info.get('ItemDesignDescription', ''),
+#             'rarity': item_info.get('Rarity', ''),
+#             'category': category,
+#             'useRecipes': f'',
+#             'item1ItemId': f'',
+#             'item1Quantity': f'',
+#             'item2ItemId': f'',
+#             'item2Quantity': f'',
+#             'item3ItemId': f'',
+#             'item3Quantity': f'',
+#             'item4ItemId': f'',
+#             'item4Quantity': f'',
+#         }
 
-        for i, (bonus_value, bonus_type) in enumerate(bonus, 1):
-            item_properties[f'bonus{i}Value'] = bonus_value
-            item_properties[f'bonus{i}Type'] = bonus_type
-        for i, (ingredient_item_id, ingredient_count) in enumerate(ingredients.items(), 1):
-            item_properties[f'item{i}ItemId'] = ingredient_item_id
-            item_properties[f'item{i}Quantity'] = ingredient_count
-            items_list.setdefault(int(ingredient_item_id), {}).setdefault('inRecipes', []).append(item_id)
+#         for i, (bonus_value, bonus_type) in enumerate(bonus, 1):
+#             item_properties[f'bonus{i}Value'] = bonus_value
+#             item_properties[f'bonus{i}Type'] = bonus_type
+#         for i, (ingredient_item_id, ingredient_count) in enumerate(ingredients.items(), 1):
+#             item_properties[f'item{i}ItemId'] = ingredient_item_id
+#             item_properties[f'item{i}Quantity'] = ingredient_count
+#             items_list.setdefault(int(ingredient_item_id), {}).setdefault('inRecipes', []).append(item_id)
 
-        items_list[int(item_id)] = item_properties
+#         items_list[int(item_id)] = item_properties
 
-    items_list = {key: value for key, value in items_list.items() if 'name' in value.keys()}
+#     items_list = {key: value for key, value in items_list.items() if 'name' in value.keys()}
 
-    for item_id in sorted(items_list.keys()):
-        item_properties = items_list[item_id]
-        if 'inRecipes' in item_properties.keys():
-            parents = sorted(item_properties['inRecipes'], key=lambda x: int(x))
-            item_properties['useRecipes'] = f'{"|".join(parents)}'
-            item_properties.pop('inRecipes')
-        result.append(f'itemList["{item_id}"] = {{')
-        for property_key, property_value in item_properties.items():
-            result.append(f'\t{property_key} = "{property_value}"')
-        result.append('}')
+#     for item_id in sorted(items_list.keys()):
+#         item_properties = items_list[item_id]
+#         if 'inRecipes' in item_properties.keys():
+#             parents = sorted(item_properties['inRecipes'], key=lambda x: int(x))
+#             item_properties['useRecipes'] = f'{"|".join(parents)}'
+#             item_properties.pop('inRecipes')
+#         result.append(f'itemList["{item_id}"] = {{')
+#         for property_key, property_value in item_properties.items():
+#             result.append(f'\t{property_key} = "{property_value}"')
+#         result.append('}')
 
-    if result:
-        file_path = raw.create_raw_file('\n'.join(result), 'lua', 'itemList', retrieved_at)
-        await utils.discord.post_output_with_files(ctx, [], [file_path])
+#     if result:
+#         file_path = raw.create_raw_file('\n'.join(result), 'lua', 'itemList', retrieved_at)
+#         await utils.discord.post_output_with_files(ctx, [], [file_path])
 
-        if file_path:
-            os.remove(file_path)
-    else:
-        raise Error('An unexpected error occured. Please contact the bot\'s author.')
+#         if file_path:
+#             os.remove(file_path)
+#     else:
+#         raise Error('An unexpected error occured. Please contact the bot\'s author.')
 
 
 
