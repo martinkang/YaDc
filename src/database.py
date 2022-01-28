@@ -46,33 +46,33 @@ async def init_schema() -> None:
     #     print('[init_schema] DB initialization failed upon creating the DB schema.')
     #     return
 
-    # if not (await update_schema('1.2.2.0', update_schema_v_1_2_2_0)):
-    #     return
+    if not (await update_schema('1.2.2.0', update_schema_v_1_2_2_0)):
+        return
 
-    # if not (await update_schema('1.2.4.0', update_schema_v_1_2_4_0)):
-    #     return
+    if not (await update_schema('1.2.4.0', update_schema_v_1_2_4_0)):
+        return
 
-    # if not (await update_schema('1.2.5.0', update_schema_v_1_2_5_0)):
-    #     return
+    if not (await update_schema('1.2.5.0', update_schema_v_1_2_5_0)):
+        return
 
-    # if not (await update_schema('1.2.6.0', update_schema_v_1_2_6_0)):
-    #     return
+    if not (await update_schema('1.2.6.0', update_schema_v_1_2_6_0)):
+        return
           
     # for Device              
     if not (await update_schema('1.2.7.0', db_update_schema_v_1_2_7_0)):
         return
 
-    # if not (await update_schema('1.2.8.0', update_schema_v_1_2_8_0)):
-    #     return
+    if not (await update_schema('1.2.8.0', update_schema_v_1_2_8_0)):
+        return
 
-    # if not (await update_schema('1.2.9.0', update_schema_v_1_2_9_0)):
-    #     return
+    if not (await update_schema('1.2.9.0', update_schema_v_1_2_9_0)):
+        return
 
-    # if not (await update_schema('1.3.0.0', update_schema_v_1_3_0_0)):
-    #     return
+    if not (await update_schema('1.3.0.0', update_schema_v_1_3_0_0)):
+        return
 
-    # if not (await update_schema('1.3.1.0', update_schema_v_1_3_1_0)):
-    #     return
+    if not (await update_schema('1.3.1.0', update_schema_v_1_3_1_0)):
+        return
 
     success_serversettings = await try_create_table('serversettings', [
         ('guildid', 'TEXT', True, True),
