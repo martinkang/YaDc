@@ -356,9 +356,6 @@ async def _db_create_device():
     device_key: str = uuid.uuid1().hex[0:16]
     device_type: str = 'DeviceTypeMac'
     checksum = hashlib.md5((f'{device_key}{device_type}savysoda').encode('utf-8')).hexdigest()
-    print(device_key)
-    print(device_type)
-    print(checksum)
    
     device = Device(device_key)
     device.__device_type = device_type

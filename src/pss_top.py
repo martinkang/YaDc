@@ -384,7 +384,8 @@ def make_target_output_lines(user_infos: List[EntityInfo], include_fleet_name: b
         trophies = int(user_info.get('Trophy', 0))
         highest_trophies = int(user_info.get('HighestTrophy', 0)) or '-'
         last_month_stars = user_info.get('LastMonthStarValue', '-')
-        line = f'**{user_rank}.** {player_star_value} ({stars}, {last_month_stars}) {emojis.star} {trophies} ({highest_trophies}) {emojis.trophy} {user_name}'
+        line = f'**{user_rank}.** / {player_star_value} / {user_name} / {trophies} '
+        #line = f'**{user_rank}.** {player_star_value} ({stars}, {last_month_stars}) {emojis.star} {trophies} ({highest_trophies}) {emojis.trophy} {user_name}'
         if include_fleet_name:
             line += f' ({fleet_name})'
         if user_rank > 1 or not result:
